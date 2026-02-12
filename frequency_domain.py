@@ -19,16 +19,11 @@ if __name__ == '__main__':
     A = 1,
     x = np.array((0,0,0))
     y = np.array((1,0,0))
-    f0 = 1000
-    sigma = 300
 
-    frequency_spectrum = np.arange(1, 16001, 1)
+
+    frequency_spectrum = np.arange(1, 8001, 1)
     v_fd = np.zeros_like(frequency_spectrum)
-    v_fd = np.ones_like(frequency_spectrum)
-    # v_fd[frequency_spectrum == 1000] = 1.0
-    # v_fd[frequency_spectrum == 2000] = 0.9
-    # v_fd[frequency_spectrum == 4000] = 0.8
-    # v_fd = np.exp(-0.5 * ((frequency_spectrum - f0) / sigma) ** 2)
+    v_fd[frequency_spectrum == 1000] = 1.0
     p_yf = calcualte_p_in_y_in_frequency_domain(v_fd, frequency_spectrum, x, y, A)
     plt.plot(frequency_spectrum, abs(p_yf))
     plt.title("Frequency Domain monopole acousic pressure in point y")

@@ -1,46 +1,93 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from engine import differentiate
+import scipy as sp
 
-def calculate_p_in_y_time_domain(
-        v: np.ndarray,
+
+
+def calculate_p_in_time_domain(
+        v_td_fx: callable,
         rho: float,
         A: float,
         x: np.ndarray,
         y: np.ndarray,
-):
+        delta_f: float,
+        spektrum: tuple,
+        )->np.ndarray:
+    """
+    Calculates the frequency domain sound pressure level in y
+    from the time domain monopole source with v
+    :param v_td_fx: function of particle speed v in time domain
+    :param rho: air density
+    :param A: assigned surface area of the monopole source
+    :param x: position of the monopole source
+    :param y: recoding position of the acoustic pressure
+    :param delta_f: resolution of the resulting acoustic pressure
+    :param spektrum: frequency sprektrum that is targetted to be
+    calculated for the acosutic pressure in y
+    :return: acoustic pressure in point y in frequency domain
+    """
+
+    #number of discrete time points needed for the resolution
+    #and the frequency spectrum wanted
+    N = np.ceil(2 * spektrum[1]/delta_f)
+    #total time of the measurement needed
+    T = N/( 2 * spektrum[1])
+    #time points of the measurement
+    time_full = np.linspace(0, T, int(N), endpoint=False)
+    frequency_spectrum_real = np.linspace(spektrum[0], spektrum[1], int(N/2))
+    #particle velocity in measurement points
+    v_td = v_td_fx(time_full)
+    #distance of y to x (microphone to monopole source)
     r = np.linalg.norm(y - x)
-    t = np.linspace(0, 1, 16000 )
-    dvdt = differentiate(v, t)
-    p_yt_ = (rho/(4 * np.pi * r)) * A * dvdt
-    return p_yt_
+    #2 different differentiation methods.
+    #scipy is delivering better results
+    #one is scipy using the particle velocity function
+    dvdt = sp.differentiate.derivative(lambda x: v_td_fx(x),
+     time_full, initial_step=time_full[1]-time_full[0])
+    p_yt_ = (rho / (4 * np.pi * r)) * A * dvdt.df
+    #one is numpy, uses the particle velocity points
+    '''dvdt = np.gradient(v_td, time_full[1] - time_full[0], edge_order=2)
+    p_yt_ = (rho / (4 * np.pi * r)) * A * dvdt'''
+
+    from scipy.signal.windows import blackman
+    #windowing function is not necessary with scipy derivative
+    #and the result is better with it.
+    #w = blackman(int(N))
+
+    #discrete fourier transform.
+    p_yf_ = sp.fft.fft(p_yt_, norm="forward")
+
+    #to account for negative frequencies halving the amplitudes,
+    #pressure is doubled.
+    p_yf_ = p_yf_[:len(frequency_spectrum_real)] * 2
+    # plt.plot(frequency_spectrum_real, abs(p_yf_[:len(frequency_spectrum_real)]))
+    # plt.show()
+    return p_yf_
 
 if __name__ == "__main__":
-    frequency_spectrum = np.arange(1, 16001, 1)
-    f0 = 1000
-    sigma = 300
-    v_fd = np.zeros_like(frequency_spectrum)
-    v_fd = np.ones_like(frequency_spectrum)
-    # v_fd[frequency_spectrum == 1000] = 1.0
-    # v_fd[frequency_spectrum == 2000] = 0.9
-    # v_fd[frequency_spectrum == 4000] = 0.8
-    #v_fd = np.exp(-0.5 * ((frequency_spectrum - f0) / sigma) ** 2)
-    # plt.plot(frequency_spectrum, v_fd)
-    # plt.title("Frequency domain particle velocity")
-    # plt.xlabel("Frequency (Hz)")
-    # plt.ylabel("Particle velocity (m/s)")
-    #plt.show()
-    v_td = np.fft.ifft(v_fd, 16000)
-    p_yt = calculate_p_in_y_time_domain(v_td, 1.204, 1, np.array((0,0,0)), np.array((1,0,0)))
-    p_yf = np.fft.fft(p_yt, 16000)
-    plt.plot(frequency_spectrum, np.abs(p_yf))
-    plt.title("Time domain monopole acoustic pressure in point y")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Acoustic pressure (Pa)")
-    plt.show()
-    sound_in_db = np.log10(((np.abs(p_yf) + 2e-5)/ (2e-5))) * 20
-    plt.plot(frequency_spectrum, sound_in_db)
-    plt.title("Time domain monopole acoustic pressure in point y")
+
+    def sin_function(f, t, A=1):
+        v_td_fx = A * np.sin(2 * np.pi * f * t)
+        return v_td_fx
+
+    p = calculate_p_in_time_domain(
+        v_td_fx=lambda x: sin_function(1000, x),
+        rho=1.2041,
+        A=1.0,
+        x = np.array((0,0,0)),
+        y= np.array((1,0,0)),
+        delta_f=1.0,
+        spektrum=(1,8000),
+    )
+
+    p_db = np.log10((abs(p[:8000]) + 2e-5)/2e-5) *20
+    frequencies = np.linspace(1, 8000, 8000)
+    plt.plot(frequencies, p_db, label="p_(y) in dB from x with v_x = sin(1000Hz*2*pi)m/s")
+    plt.title("acoustic pressure in point y, calculated in time domain")
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Acoustic pressure (dB)")
+    plt.legend(loc = "upper right")
     plt.show()
+
+
+
