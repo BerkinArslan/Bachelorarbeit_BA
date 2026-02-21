@@ -64,6 +64,45 @@ def calculate_p_in_time_domain(
     # plt.show()
     return p_yf_
 
+def calculate_p_in_time_domain_from_frequency_domain_signal(
+        v_fd_fx: np.ndarray,
+        rho: float,
+        A: float,
+        x: np.ndarray,
+        y: np.ndarray,
+        delta_f: float,
+        spektrum: tuple,
+        )->np.ndarray:
+    """
+
+    :param v_fd_fx:
+    :param rho:
+    :param A:
+    :param x:
+    :param y:
+    :param delta_f:
+    :param spektrum:
+    :return:
+    """
+    # number of discrete time points needed for the resolution
+    # and the frequency spectrum wanted
+    N = np.ceil(2 * spektrum[1] / delta_f)
+    # total time of the measurement needed
+    T = N / (2 * spektrum[1])
+    # time points of the measurement
+    time_full = np.linspace(0, T, int(N), endpoint=False)
+    dt = time_full[1] - time_full[0]
+    frequency_spectrum_all = sp.fft.fftfreq(len(v_fd_fx), d=dt)
+    frequency_spectrum_real = frequency_spectrum_all[:int(N)//2]
+    dv_fd_fxdt = 1j * 2 * np.pi * frequency_spectrum_all * v_fd_fx
+    dvdt = sp.fft.ifft(dv_fd_fxdt, norm="forward")
+    r = np.linalg.norm(y - x)
+    p_yt_ = (rho / (4 * np.pi * r)) * A * dvdt
+    p_yf_ = sp.fft.fft(p_yt_, norm="forward")
+    p_yf_ = p_yf_[:len(frequency_spectrum_real)] * 2
+    return p_yf_
+
+
 if __name__ == "__main__":
 
     def sin_function(f, t, A=1):
