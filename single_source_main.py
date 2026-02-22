@@ -1,5 +1,5 @@
 from frequency_domain import calcualte_p_in_y_in_frequency_domain
-from time_domain import calculate_p_in_time_domain, calculate_p_in_time_domain_from_frequency_domain_signal
+from time_domain import monopole_ta__calct__outf, monopole_tf__calct_outf
 import numpy as np
 from matplotlib import pyplot as plt
 import scipy as sp
@@ -60,15 +60,17 @@ if __name__ == '__main__':
     #particle velocity function
     v_td_fx = lambda x: sin_function(1000, x, A=A)
 
-    p_y_td = calculate_p_in_time_domain(
+    p_y_td = monopole_tf__calct_outf(
         v_td_fx=v_td_fx,
+        time_full=np.linspace(0, 1, 16000, endpoint=False),
         rho=rho,
         A=A,
         x=np.array((0,0,0)),
         y=np.array((1,0,0)),
         delta_f=1,
-        spektrum=(spectrum_min, spectrum_max)
     )
+
+
 
     p_y_td_db = np.log10((abs(p_y_td) + 2e-5)/2e-5) * 20
 
@@ -116,14 +118,13 @@ if __name__ == '__main__':
 
     f_axis = sp.fft.fftfreq(16000, d=1 / 16000)
     v_fd_fx = gaussian_distribution(1500, 100, f_axis, A=0.707)
-    p_fd_from_td = calculate_p_in_time_domain_from_frequency_domain_signal(
-        v_fd_fx=v_fd_fx,
+    p_fd_from_td = monopole_ta__calct__outf(
+        v_fd=v_fd_fx,
         rho=rho,
         A=A,
         x=np.array((0,0,0)),
         y=np.array((1,0,0)),
         delta_f=1,
-        spektrum=(spectrum_min, spectrum_max)
     )
     p_fd_from_fd = calcualte_p_in_y_in_frequency_domain(v_fd_fx[:8000],
                                                         frequency_spectrum=np.arange(spectrum_min, spectrum_max + 1, 1),
@@ -133,6 +134,8 @@ if __name__ == '__main__':
                                                         c=c,
                                                         rho=rho
                                                         )
+    a = np.sum(np.abs(p_fd_from_td) ** 2)
+    b = np.sum(np.abs(p_fd_from_fd) ** 2)
 
     p_fd_from_td = np.log10((abs(p_fd_from_td) + 2e-5)/2e-5) * 20
     p_fd_from_fd = np.log10((abs(p_fd_from_fd) + 2e-5) / 2e-5) * 20
@@ -156,8 +159,7 @@ if __name__ == '__main__':
     plt.ylabel("Acoustic pressure (dB)")
     plt.legend()
     plt.show()
-    a = np.sum(np.abs(p_fd_from_td) ** 2)
-    b = np.sum(np.abs(p_fd_from_fd) ** 2)
+
     print(a/b)
 
 
