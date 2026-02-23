@@ -101,7 +101,7 @@ def monopole_ta__calct__outf(
     p_yf_ = sp.fft.fft(p_yt_, norm="forward")
 
     #we only need the postive frequencies
-    p_yf_ = p_yf_[:(len(frequency_spectrum)//2)] * 2
+    p_yf_ = p_yf_[:(len(frequency_spectrum)//2)]
     return p_yf_
 
 
