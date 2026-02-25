@@ -5,7 +5,7 @@ import scipy as sp
 Function naming convention:
 
 <source_name>_<in_domain><in_type>__calc<calc_domain>__out<out_domain>
-Source names: {monopole -> monopole, multi monopole -> monopole_matrix}
+Source names: {monopole -> monopole, multi monopole -> monopole_multi}
 Domain names: {time domain -> t, frequency domain -> f}
 Type names: {array -> a, callable -> f}
 """
