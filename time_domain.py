@@ -104,5 +104,65 @@ def monopole_ta__calct__outf(
     p_yf_ = p_yf_[:(len(frequency_spectrum)//2)]
     return p_yf_
 
+def monopole_multi_ta__calct__outf(
+        V_td:np.ndarray,
+        X:np.ndarray,
+        y:np.ndarray,
+        dt: float,
+        A:float,
+        rho:float = 1.2041,
+        c: float = 343.0,
+        T:float = None,
+        freqs: np.ndarray = None,
+)->np.array:
+    """
+    Calculates the sound pressure level in measurement point y
+    from multiple monopole sources in matrix X.
+    :param V_td: Time dependent particle speed matrix of the points in X.
+    :param A: The assigned surface area matrix of the monopole sources
+    :param X:  Coordinates of the source points (cartesian)
+    :param y: Coordinate og the measurement point (cartesian)
+    :param: rho: The density of the medium (Standard 1.2041 kg/m^3).
+    :return: The frequency dependent sound pressure array in measurement point y.
+    """
+    #Fourier parameters
+    N = V_td.shape[1]
+    if T is None:
+        T = N * dt
+    if freqs is None:
+        freqs = sp.fft.fftfreq(N, d=dt)
+    time_full = np.linspace(0, T, int(N), endpoint=False)
+
+    #Distance matrix
+    r = np.linalg.norm(y - X, axis=1)
+    r = r[:, None]
+    if np.any(r == 0):
+        raise ValueError("Measurment Point cannot be the same as a monopole source!")
+
+    #I can do this 2 ways:
+    # I can first fft it and calculate the derivative analytically
+    # Or use numpy derivative and calculate directly
+
+    #FFT->Analytical derication->IFFT->Calculation->FFT
+    V_fd = sp.fft.fft(V_td, norm="forward")
+    V_fddt = V_fd * 1j * 2 * np.pi * freqs
+    #we need to calculate the time delay of the monopole points
+    tau = r / c #this should have the shape of [N, 1]
+    t_shifted = time_full[None, :] - tau # we want ot have the matrix to have (N, nt)
+    V_tddt = sp.fft.ifft(V_fddt, norm="forward")
+    V_shifted = sp.interpolate.interp1d(
+        time_full,
+        V_tddt,
+        axis=1,
+        kind="linear",
+        bounds_error=False,
+        fill_value=0.0,
+    )(t_shifted)
+    P_yt = (rho / (4 * np.pi * r)) * A * V_shifted
+    P_yf = sp.fft.fft(P_yt, norm="forward")
+    P_yf = P_yf[:, :N//2]
+    p = np.sum(P_yf, axis=0)
+
+    return p
 
 

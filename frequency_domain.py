@@ -8,6 +8,17 @@ def calcualte_p_in_y_in_frequency_domain(v_fd: np.ndarray,
                                          A:float,
                                          c:float = 343.0,
                                          rho:float = 1.2041):
+    """
+    Calculates the single monopole sound pressure from the source in point y.
+    :param v_fd: Array of monopole partcile speed in the source in frequency domain.
+    :param frequency_spectrum: The spectrum of the frequency domain.
+    :param x: The monopole source point in x,y,z axis.
+    :param y: The Measurement point in x,y,z axis.
+    :param A: Assigned monopole surface area.
+    :param c: The speed of sound of the medium (Standard 343m/s).
+    :param rho: The density of the medium (Standard 1.2041 kg/m^3).
+    :return: p(f) Frequency dependent sound pressure array.
+    """
     k = 2 * np.pi * frequency_spectrum / c
 
     r = np.linalg.norm(y - x)
@@ -24,6 +35,18 @@ def monopole_multi_fa__calcf__outf(
         c: float = 343.0,
         rho: float = 1.2041,
 )->np.ndarray:
+    """
+    Calculates the sound pressure in measurement point y from multiple
+    monopole sources in matrix X.
+    :param V_fd: Frequency dependent particle speed matrix of the points in X.
+    :param freqs: spectrum of the frequency domain.
+    :param X: Coordinates of the source points (cartesian).
+    :param y: Coordinate of the measurement point (cartesian).
+    :param A: Assigned monopole surface area matrix of the sources.
+    :param c: The speed of sound of the medium (Standard 343m/s).
+    :param rho: The density of the medium (Standard 1.2041 kg/m^3).
+    :return: The frequency dependent sound pressure array in measurement point y.
+    """
 
     k = 2 * np.pi * freqs / c
     k = k[None, :]
@@ -31,7 +54,7 @@ def monopole_multi_fa__calcf__outf(
     r = np.linalg.norm(y - X, axis=1)
     r = r[:, None]
     if np.any(r == 0):
-        raise ValueError("Measurement point cannot be the same asa monopole source!")
+        raise ValueError("Measurement point cannot be the same as a monopole source!")
 
     omega = 2 * np.pi * freqs
     omega = omega[None, :]
