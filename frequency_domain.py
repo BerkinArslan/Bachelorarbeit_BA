@@ -58,7 +58,6 @@ def monopole_multi_fa__calcf__outf(
 
     omega = 2 * np.pi * freqs
     omega = omega[None, :]
-
     p = np.exp(-1j * k * r)/(4 * np.pi * r) * 1j * omega * V_fd * rho * A
     p = np.sum(p, axis=0)
     return p
