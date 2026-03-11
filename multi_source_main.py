@@ -14,7 +14,7 @@ from rolland import track
 from frequency_domain import monopole_multi_fa__calcf__outf
 from rail_deflection import rail_deflection_rolland
 from utils import interpolate_contour_2d, create_mesh, calculate_centre_and_area_triangles, calculate_projected_area, \
-    assign_v_to_points
+    assign_v_to_points, semi_circle_measurement_points
 from matplotlib import pyplot as plt
 
 # 1. TRACK DEFINITION ----------------------------------------------------------
@@ -53,8 +53,9 @@ triangle_coords, triangle_index = create_mesh(rail_geometry,
                                               )
 
 A, centre, norm = calculate_centre_and_area_triangles(triangle_coords, triangle_index)
-projected_area = calculate_projected_area(A, norm, 2)
-
+print(f'mean area = {A.mean()}')
+projected_area = calculate_projected_area(A, norm, 1)
+print(f'projected_area mean = {projected_area.mean()}')
 nt = dict_func['nt']
 dt = dict_func['dt']
 deflection = dict_func['deflection'][0::2, :nt]
@@ -63,7 +64,7 @@ full_freq_spectrum = sp.fft.fftfreq(nt, dt)
 f_axis_sim = dict_func['frequencies']
 mask = (full_freq_spectrum > f_axis_sim[0]) & (full_freq_spectrum < f_axis_sim[-1])
 
-deflection_fd = sp.fft.fft(deflection, norm="forward", axis=1) * 2
+deflection_fd = sp.fft.fft(deflection, norm='forward', axis=1) * 2
 
 omega = 2 * np.pi * f_axis_sim
 
@@ -88,15 +89,45 @@ triangle_v_fd = assign_v_to_points(
 
 print(triangle_v_fd.shape)
 
-P = monopole_multi_fa__calcf__outf(triangle_v_fd,
-                                   f_axis_sim,
-                                   centre,
-                                   np.array((3,4,70)),
-                                   projected_area[:, None],)
+measurement_points = semi_circle_measurement_points(
+    np.array((-2, 0, 75)),
+    20,
+    5
+)
+P_all = []
+# for point in measurement_points:
+#
+#     P = monopole_multi_fa__calcf__outf(triangle_v_fd,
+#                                        f_axis_sim,
+#                                        centre,
+#                                        point,
+#                                        projected_area[:, None],) * 2
+#     P_all.append(np.abs(P) ** 2 )
 
-P = P[:len(f_axis_sim)//2] * 2
+P_all = []
+z_axis_points = np.linspace(75, 75, 1)
+for point_z in z_axis_points:
+    measurement_points = semi_circle_measurement_points(
+        np.array((-2, 0, point_z)),
+        1,
+        7
+    )
+    for point in measurement_points:
+        P = monopole_multi_fa__calcf__outf(triangle_v_fd,
+                                           f_axis_sim,
+                                           centre,
+                                           point,
+                                           projected_area[:, None],) * 2
+        P_all.append(np.abs(P) ** 2 )
+
+P_mean = np.mean(P_all, axis=0)
+
 p0 = 2e-5
-P_db = 20 * np.log10((np.abs(P) + p0)/ p0)
-
-plt.plot(f_axis_sim[:len(f_axis_sim)//2], P_db)
+P_db = 20 * np.log10((np.sqrt(P_mean) + p0)/ p0)
+plt_mask = (f_axis_sim >= 100) & (f_axis_sim <= 8000)
+plt_f_axis = f_axis_sim[plt_mask]
+plt_P_db = P_db[plt_mask]
+#plt.plot(f_axis_sim[:len(f_axis_sim)//2], P_db)
+plt.plot(plt_f_axis, plt_P_db)
+plt.xscale('log')
 plt.show()

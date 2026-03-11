@@ -214,6 +214,19 @@ def assign_v_to_points(
     )(z_axis)
     return interpolated_v
 
+def semi_circle_measurement_points(
+        centre_point: np.ndarray,
+        number_of_points: int,
+        radius: float,
+)-> np.ndarray:
+
+    theta = np.linspace(0, np.pi, number_of_points)
+    x = radius * np.cos(theta) + centre_point[0]
+    y = radius * np.sin(theta) + centre_point[1]
+    z = np.full(number_of_points, centre_point[2])
+
+    points = np.stack([x, y, z], axis=1)
+    return points
 
 
 
@@ -226,5 +239,9 @@ if __name__ == "__main__":
     A, centre, norm = calculate_centre_and_area_triangles(triangle_coords, triangle_index)
     projected_area = calculate_projected_area(A, norm, 2)
     print(projected_area)
+
+    circle = semi_circle_measurement_points(np.array((0,0,0)), 10, 1)
+    for point in circle:
+        print(point)
 
 
