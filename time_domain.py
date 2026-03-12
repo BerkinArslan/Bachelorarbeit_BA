@@ -112,18 +112,27 @@ def monopole_multi_ta__calct__outf(
         A:float,
         rho:float = 1.2041,
         c: float = 343.0,
+        diff_method = "numpy",
         T:float = None,
         freqs: np.ndarray = None,
 )->np.array:
     """
-    Calculates the sound pressure level in measurement point y
-    from multiple monopole sources in matrix X.
-    :param V_td: Time dependent particle speed matrix of the points in X.
-    :param A: The assigned surface area matrix of the monopole sources
-    :param X:  Coordinates of the source points (cartesian)
-    :param y: Coordinate og the measurement point (cartesian)
-    :param: rho: The density of the medium (Standard 1.2041 kg/m^3).
-    :return: The frequency dependent sound pressure array in measurement point y.
+    Calculates the frequency-dependent sound pressure at measurement point y
+    from multiple monopole sources in matrix X in time domain.
+
+    :param V_td: Time-dependent particle velocity matrix, shape (n_sources, n_timesteps).
+    :param X: Cartesian coordinates of the source points, shape (n_sources, 3).
+    :param y: Cartesian coordinates of the measurement point, shape (3,).
+    :param dt: Time step size in seconds.
+    :param A: Surface area assigned to each monopole source (m^2).
+    :param rho: Density of the medium in kg/m^3. Default: 1.2041 (air at 20°C).
+    :param c: Speed of sound in m/s. Default: 343.0 (air at 20°C).
+    :param diff_method: Time derivative method:
+                            "analytic" (FFT, exact)
+                            or "numpy" (finite differences, approximate).
+    :param T: Total signal duration in seconds. If None, computed as N * dt.
+    :param freqs: Frequency array in Hz. If None, computed via fftfreq(N, d=dt).
+    :return: Complex frequency-domain pressure at y, summed over all sources, shape (N//2,).
     """
     #Fourier parameters
     N = V_td.shape[1]
@@ -143,24 +152,46 @@ def monopole_multi_ta__calct__outf(
     # I can first fft it and calculate the derivative analytically
     # Or use numpy derivative and calculate directly
 
+
     #FFT->Analytical derication->IFFT->Calculation->FFT
-    V_fd = sp.fft.fft(V_td, norm="forward")
-    V_fddt = V_fd * 1j * 2 * np.pi * freqs
+    if diff_method == "analytic":
+        V_fd = sp.fft.fft(V_td, norm="forward")
+        V_fddt = V_fd * 1j * 2 * np.pi * freqs
+        V_tddt = sp.fft.ifft(V_fddt, norm="forward")
+    elif diff_method == "numpy":
+        V_tddt = np.gradient(V_td, dt, axis=1)
     #we need to calculate the time delay of the monopole points
-    tau = r / c #this should have the shape of [N, 1]
-    t_shifted = time_full[None, :] - tau # we want ot have the matrix to have (N, nt)
-    V_tddt = sp.fft.ifft(V_fddt, norm="forward")
-    V_shifted = sp.interpolate.interp1d(
-        time_full,
-        V_tddt,
-        axis=1,
-        kind="linear",
-        bounds_error=False,
-        fill_value=0.0,
-    )(t_shifted)
+    # tau = r / c #this should have the shape of [N, 1]
+    # t_shifted = time_full[None, :] - tau # we want ot have the matrix to have (N, nt)
+    # V_shifted = sp.interpolate.interp1d(
+    #     time_full,
+    #     V_tddt,
+    #     axis=1,
+    #     kind="linear",
+    #     bounds_error=False,
+    #     fill_value=0.0,
+    # )(t_shifted)
+
+
+    # from scipy.ndimage import shift
+    #
+    # tau = (r / c).flatten()  # shape (n_sources,)
+    # V_shifted = np.array([
+    #     shift(V_tddt[i], tau[i] / dt, mode='constant', cval=0.0, order=0)
+    #     for i in range(len(tau))
+    # ])
+
+    tau = (r / c).flatten()
+    delay_samples = np.round(tau / dt).astype(int)
+
+    V_shifted = np.zeros_like(V_tddt)
+
+    for i, k in enumerate(delay_samples):
+        if k < N:
+            V_shifted[i, k:] = V_tddt[i, :N - k]
     P_yt = (rho / (4 * np.pi * r)) * A * V_shifted
     P_yf = sp.fft.fft(P_yt, norm="forward")
-    P_yf = P_yf[:, :N//2]
+    #P_yf = P_yf[:, :N//2]
     p = np.sum(P_yf, axis=0)
 
     return p
