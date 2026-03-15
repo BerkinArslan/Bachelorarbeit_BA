@@ -196,4 +196,3 @@ def monopole_multi_ta__calct__outf(
 
     return p
 
-

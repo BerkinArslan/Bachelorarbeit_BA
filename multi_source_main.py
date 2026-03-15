@@ -115,11 +115,11 @@ P_all = []
 
 P_all = []
 P_all_td = []
-z_axis_points = np.linspace(73, 73, 1)
+z_axis_points = np.linspace(71.7, 71.7, 1)
 for point_z in z_axis_points:
     measurement_points = semi_circle_measurement_points(
-        np.array((-2, 0, point_z)),
-        5,
+        np.array((-0.71, -0.8, point_z)),
+        10,
         2.5
     )
     for point in measurement_points:
@@ -164,3 +164,15 @@ plt.plot(wagner_simulation_data[:, 0], wagner_simulation_data[:, 1], label="wagn
 plt.legend()
 plt.xscale('log')
 plt.show()
+
+#auralize
+mask = (f_axis_sim >= 100) & (f_axis_sim <= 8000)
+P_audio = np.zeros_like(P_mean_td)
+P_audio[mask] = P_mean_td[mask]
+p_time = sp.fft.ifft(P_audio).real
+p_time = p_time / np.max(np.abs(p_time))
+samplerate = int(1 / dict_func['dt'])
+
+sp.io.wavfile.write("BEM_calculation_filtered.wav", samplerate, p_time.astype(np.float32))
+import os
+os.system("afplay BEM_calculation_filtered.wav")
