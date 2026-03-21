@@ -236,7 +236,7 @@ def vector_deflection_total(
         centre: np.ndarray,
         rail_axis: int = 2,
         dx_of_displacement: np.float64 = 0.05,
-)-> tuple[np.ndarray]:
+)-> tuple[np.ndarray, np.ndarray]:
     """
     Calculate the total lateral and vertical deflection for multiple
     monopole centres from given lateral, vertical, and rotating displacements.
