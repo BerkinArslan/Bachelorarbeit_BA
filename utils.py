@@ -229,6 +229,68 @@ def semi_circle_measurement_points(
     return points
 
 
+def vector_deflection_total(
+        u_x: np.ndarray,
+        u_y: np.ndarray,
+        phi_z: np.ndarray,
+        centre: np.ndarray,
+        rail_axis: int = 2,
+        dx_of_displacement: np.float64 = 0.05,
+)-> tuple[np.ndarray]:
+    """
+    Calculate the total lateral and vertical deflection for multiple
+    monopole centres from given lateral, vertical, and rotating displacements.
+    :param u_x: lateral displacement
+    :param u_y: verticle displacement
+    :param phi_z: rotating displacement
+    :param centre: monopole centres
+    :param rail_axis: the axis along which the rail direction is defined.
+    :return: total lateral and vertical deflections of each monopole centre.
+    """
+    if not (u_y.shape == u_x.shape == phi_z.shape):
+        raise ValueError("u_y, u_z and phi_x must have same shape")
+    
+    if u_y.ndim != 2:
+        raise ValueError("Arrays must be 2D with shape (n_time, n_x)")
+    
+    n_t, n_x = u_y.shape
+    N = centre.shape[0]
+
+    #Interpolate along the rail axis so that the points
+    #on the rail axis for each poisition is preserved
+
+    monopole_z_positions = centre[:, rail_axis]
+    given_displacement_z_positions = np.arange(0, n_x, 1) * dx_of_displacement
+    u_x_interpolated = sp.interpolate.interp1d(
+        given_displacement_z_positions,
+        u_x,
+        kind='linear',
+        bounds_error=False,
+        fill_value='extrapolate',
+    )(monopole_z_positions)
+
+    u_y_interpolated = sp.interpolate.interp1d(
+        given_displacement_z_positions,
+        u_y,
+        kind='linear',
+        bounds_error=False,
+        fill_value='extrapolate',
+    )(monopole_z_positions)
+
+    phi_z_interpoalted = sp.interpolate.interp1d(
+        given_displacement_z_positions,
+        phi_z,
+        kind='linear',
+        bounds_error=False,
+        fill_value='extrapolate'
+    )(monopole_z_positions)
+    #now we calculate the total displacement with the interpolated z
+
+    u_x_total = u_x_interpolated + phi_z_interpoalted * centre[:, 1]
+    u_y_total = u_y_interpolated + phi_z_interpoalted * centre[:, 0]
+
+    return u_x_total, u_y_total
+
 
 if __name__ == "__main__":
     rail_geometry = UIC60.rl_geo
@@ -243,5 +305,7 @@ if __name__ == "__main__":
     circle = semi_circle_measurement_points(np.array((0,0,0)), 10, 1)
     for point in circle:
         print(point)
+
+
 
 
