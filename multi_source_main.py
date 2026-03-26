@@ -31,8 +31,8 @@ track = SimplePeriodicBallastedSingleRailTrack(
         sb=[105e6, 0],  # Ballast stiffness [N/m]
         db=[75000, 0]  # Ballast damping [Ns/m]
     ),
-    num_mount=243,  # Number of discrete mounting positions
-    distance=0.6  # Distance between sleepers [m]
+    num_mount=100,  # Number of discrete mounting positions
+    distance=0.60  # Distance between sleepers [m]
 )
 
 # 2. SIMULATION SETUP ---------------------------------------------------------
@@ -40,7 +40,7 @@ track = SimplePeriodicBallastedSingleRailTrack(
 boundary = PMLRailDampVertic(l_bound=33.0)  # 33.0 m boundary domain
 
 # Define excitation (Gaussian impulse between sleepers at 71.7m)
-excitation = GaussianImpulse(x_excit=71.7)
+excitation = GaussianImpulse(x_excit=32.8)
 
 resp_func, dict_func = rail_deflection_rolland(track, boundary, excitation)
 
@@ -50,7 +50,7 @@ rail_geometry = UIC60.rl_geo
 rail_geometry = interpolate_contour_2d(rail_geometry, 100)
 triangle_coords, triangle_index = create_mesh(rail_geometry,
                                               mesh_size=10.0,
-                                              L=146.0 #146.0
+                                              L=126.0 #146.0
                                               )
 
 A, centre, norm = calculate_centre_and_area_triangles(triangle_coords, triangle_index)

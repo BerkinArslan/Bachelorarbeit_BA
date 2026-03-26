@@ -291,6 +291,28 @@ def vector_deflection_total(
 
     return u_x_total, u_y_total
 
+def run_simulation_semi_circle(
+        circle_centre: np.ndarray,
+        circle_radius: float,
+        number_of_points: int,
+        simulation_function: callable,
+        multiply_by_two: bool = False,
+        **simulation_kwargs,
+):
+    P_all = []
+    measurement_points = semi_circle_measurement_points(
+        circle_centre,
+        number_of_points,
+        circle_radius,
+    )
+    for point in measurement_points:
+        P = simulation_function(**simulation_kwargs, y=point)
+        P_all.append(np.abs(P) ** 2)
+
+    P_mean = np.sqrt(np.mean(P_all, axis=0))
+    return P_mean
+
+
 
 if __name__ == "__main__":
     rail_geometry = UIC60.rl_geo
