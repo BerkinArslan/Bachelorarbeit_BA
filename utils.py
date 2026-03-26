@@ -312,6 +312,76 @@ def run_simulation_semi_circle(
     P_mean = np.sqrt(np.mean(P_all, axis=0))
     return P_mean
 
+#The next function is written by copilot!
+def run_simulation_semi_circle_total(
+        circle_centre: np.ndarray,
+        circle_radius: float,
+        number_of_points: int,
+        simulation_function: callable,
+        V_fd_z: np.ndarray,
+        A_z: np.ndarray,
+        V_fd_y: np.ndarray | None = None,
+        A_y: np.ndarray | None = None,
+        return_components: bool = False,
+        **simulation_kwargs,
+):
+    """
+    Same style as run_simulation_semi_circle, but supports vertical + lateral
+    and returns RMS over semicircle points.
+
+    If V_fd_y and A_y are given:
+        total is computed coherently: p_total = p_z + p_y
+    Else:
+        behaves like vertical-only simulation.
+    """
+
+    P_total_all = []
+    P_z_all = []
+    P_y_all = []
+
+    measurement_points = semi_circle_measurement_points(
+        circle_centre,
+        number_of_points,
+        circle_radius,
+    )
+
+    for point in measurement_points:
+        p_z = simulation_function(
+            **simulation_kwargs,
+            V_fd=V_fd_z,
+            A=A_z,
+            y=point,
+        )
+        P_z_all.append(np.abs(p_z) ** 2)
+
+        if V_fd_y is not None and A_y is not None:
+            p_y = simulation_function(
+                **simulation_kwargs,
+                V_fd=V_fd_y,
+                A=A_y,
+                y=point,
+            )
+            P_y_all.append(np.abs(p_y) ** 2)
+
+            # Coherent total (phase-correct)
+            p_total = p_z + p_y
+            P_total_all.append(np.abs(p_total) ** 2)
+        else:
+            P_total_all.append(np.abs(p_z) ** 2)
+
+    P_total_rms = np.sqrt(np.mean(P_total_all, axis=0))
+
+    if return_components:
+        P_z_rms = np.sqrt(np.mean(P_z_all, axis=0))
+        if len(P_y_all) > 0:
+            P_y_rms = np.sqrt(np.mean(P_y_all, axis=0))
+        else:
+            P_y_rms = None
+        return P_total_rms, P_z_rms, P_y_rms
+
+    return P_total_rms
+
+
 
 
 if __name__ == "__main__":
