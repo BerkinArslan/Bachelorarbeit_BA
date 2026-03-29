@@ -287,7 +287,7 @@ def vector_deflection_total(
     #now we calculate the total displacement with the interpolated z
 
     u_x_total = u_x_interpolated + phi_z_interpoalted * centre[:, 1]
-    u_y_total = u_y_interpolated + phi_z_interpoalted * centre[:, 0]
+    u_y_total = u_y_interpolated - phi_z_interpoalted * centre[:, 0]
 
     return u_x_total, u_y_total
 
