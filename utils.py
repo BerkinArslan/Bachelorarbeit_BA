@@ -318,11 +318,12 @@ def run_simulation_semi_circle_total(
         circle_radius: float,
         number_of_points: int,
         simulation_function: callable,
-        V_fd_z: np.ndarray,
+        V_z: np.ndarray,
         A_z: np.ndarray,
-        V_fd_y: np.ndarray | None = None,
+        V_y: np.ndarray | None = None,
         A_y: np.ndarray | None = None,
         return_components: bool = False,
+        time_domain: bool = False,
         **simulation_kwargs,
 ):
     """
@@ -334,6 +335,11 @@ def run_simulation_semi_circle_total(
     Else:
         behaves like vertical-only simulation.
     """
+
+    if time_domain:
+        signal_key = 'V_td'
+    else:
+        signal_key = 'V_fd'
 
     P_total_all = []
     P_z_all = []
@@ -348,16 +354,16 @@ def run_simulation_semi_circle_total(
     for point in measurement_points:
         p_z = simulation_function(
             **simulation_kwargs,
-            V_fd=V_fd_z,
+            **{signal_key: V_z},
             A=A_z,
             y=point,
         )
         P_z_all.append(np.abs(p_z) ** 2)
 
-        if V_fd_y is not None and A_y is not None:
+        if V_y is not None and A_y is not None:
             p_y = simulation_function(
                 **simulation_kwargs,
-                V_fd=V_fd_y,
+                **{signal_key: V_y},
                 A=A_y,
                 y=point,
             )
@@ -380,7 +386,6 @@ def run_simulation_semi_circle_total(
         return P_total_rms, P_z_rms, P_y_rms
 
     return P_total_rms
-
 
 
 

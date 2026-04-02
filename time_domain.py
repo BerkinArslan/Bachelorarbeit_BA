@@ -190,9 +190,9 @@ def monopole_multi_ta__calct__outf(
         if k < N:
             V_shifted[i, k:] = V_tddt[i, :N - k]
     P_yt = (rho / (4 * np.pi * r)) * A * V_shifted
-    P_yf = sp.fft.fft(P_yt, norm="forward")
+    #P_yf = sp.fft.fft(P_yt, norm="forward")
     #P_yf = P_yf[:, :N//2]
-    p = np.sum(P_yf, axis=0)
+    p = np.sum(P_yt, axis=0)
 
     return p
 
