@@ -115,6 +115,7 @@ def monopole_multi_ta__calct__outf(
         diff_method = "numpy",
         T:float = None,
         freqs: np.ndarray = None,
+        frequency_output: bool = False,
 )->np.array:
     """
     Calculates the frequency-dependent sound pressure at measurement point y
@@ -193,6 +194,10 @@ def monopole_multi_ta__calct__outf(
     #P_yf = sp.fft.fft(P_yt, norm="forward")
     #P_yf = P_yf[:, :N//2]
     p = np.sum(P_yt, axis=0)
+    if frequency_output:
+        P_yf = sp.fft.fft(P_yt, norm="forward")
+        #P_yf = P_yf[:, :N//2]
+        p = np.sum(P_yf, axis=0)
 
     return p
 
