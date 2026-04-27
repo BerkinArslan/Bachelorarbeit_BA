@@ -5,7 +5,7 @@ import numpy as np
 from utils import interpolate_contour_2d
 
 rail_geometry = UIC60.rl_geo
-rail_geometry = interpolate_contour_2d(rail_geometry, 100)
+rail_geometry = interpolate_contour_2d(rail_geometry, 50)
 x_points = [point[0] for point in rail_geometry]
 y_points = [point[1] for point in rail_geometry]
 plt.plot(x_points, y_points)
@@ -32,7 +32,7 @@ for i in range(len(point_tags)):
 cl = gmsh.model.geo.addCurveLoop(line_tags)
 surface = gmsh.model.geo.addPlaneSurface([cl])
 
-L = 10.0
+L = 0.25
 gmsh.model.geo.extrude([(2, surface)], 0, 0, L)
 
 gmsh.model.geo.synchronize()
@@ -78,3 +78,4 @@ for elem_nodes in elementNodeTags[0].reshape(-1,3):
 
 
 gmsh.finalize()
+

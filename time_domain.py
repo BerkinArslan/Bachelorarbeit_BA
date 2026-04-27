@@ -195,7 +195,7 @@ def monopole_multi_ta__calct__outf(
     #P_yf = P_yf[:, :N//2]
     p = np.sum(P_yt, axis=0)
     if frequency_output:
-        P_yf = sp.fft.fft(P_yt, norm="forward")
+        P_yf = sp.fft.fft(P_yt, norm="forward", axis=1)
         #P_yf = P_yf[:, :N//2]
         p = np.sum(P_yf, axis=0)
 
